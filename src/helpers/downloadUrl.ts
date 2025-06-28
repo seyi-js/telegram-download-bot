@@ -22,6 +22,7 @@ import unlincSyncSafe from '@/helpers/unlincSyncSafe'
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const youtubedl = require('youtube-dl-exec')
 
+// ...existing code...
 export default async function downloadUrl(
   downloadJob: DocumentType<DownloadJob>
 ) {
@@ -31,9 +32,8 @@ export default async function downloadUrl(
     : '/var/tmp/video-download-bot'
   try {
     console.log(`Downloading url ${downloadJob.url}`)
-    // Download
+
     const config = {
-      dumpSingleJson: true,
       noWarnings: true,
       noCheckCertificate: true,
       youtubeSkipDashManifest: true,
@@ -50,28 +50,43 @@ export default async function downloadUrl(
       noPart: true,
       cookies: resolve(cwd(), 'cookie'),
       recodeVideo: 'mp4',
+      ignoreErrors: true,
     }
 
-    const downloadedFileInfo: DownloadedFileInfo = await youtubedl(
-      downloadJob.url,
-      {
-        // listFormats: true,
+    let downloadedFileInfo: DownloadedFileInfo
+    let title = 'Downloaded Video'
+    let ext = downloadJob.audio ? 'mp3' : 'mp4'
+
+    // Try to get video info first
+    try {
+      downloadedFileInfo = await youtubedl(downloadJob.url, {
         dumpSingleJson: true,
         noWarnings: true,
         noCheckCertificate: true,
         cookies: resolve(cwd(), 'cookie'),
-      }
-      // config
-    )
+        ignoreErrors: true,
+      })
 
-    console.log(`Downloaded file info: ${JSON.stringify(downloadedFileInfo)}`)
+      title = downloadedFileInfo.title || 'Downloaded Video'
+      ext =
+        downloadedFileInfo.ext || downloadedFileInfo.entries?.[0]?.ext || ext
+      console.log(`Downloaded file info: ${JSON.stringify(downloadedFileInfo)}`)
+    } catch (infoError) {
+      console.log('Failed to extract video info, using defaults:', infoError)
+      // Create a minimal downloadedFileInfo object
+      downloadedFileInfo = {
+        title,
+        ext,
+        thumbnails: [],
+      } as DownloadedFileInfo
+    }
 
-    const title = downloadedFileInfo.title
-    const ext =
-      downloadedFileInfo.ext || downloadedFileInfo.entries?.[0]?.ext || 'mkv'
     const escapedTitle = (title || '').replace('<', '&lt;').replace('>', '&gt;')
     const filePath = `${tempDir}/${fileUuid}.${ext}`
-    await youtubedl(downloadJob.url, omit(config, 'dumpSingleJson'))
+
+    // Download the actual file
+    await youtubedl(downloadJob.url, config)
+
     // Upload
     downloadJob.status = DownloadJobStatus.uploading
     await downloadJob.save()
@@ -113,6 +128,8 @@ export default async function downloadUrl(
           error.message.includes('Requested format is not available')
         ) {
           downloadJob.status = DownloadJobStatus.noSuitableVideoSize
+        } else if (error.message.includes('Unable to extract title')) {
+          downloadJob.status = DownloadJobStatus.failedDownload
         } else {
           downloadJob.status = DownloadJobStatus.failedDownload
         }
