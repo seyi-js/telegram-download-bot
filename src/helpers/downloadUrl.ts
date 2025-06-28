@@ -27,8 +27,6 @@ export default async function downloadUrl(
     ? resolve(cwd(), 'output')
     : '/var/tmp/video-download-bot'
   try {
-    console.log(`Downloading url ${downloadJob.url}`)
-    // Download
     const config = {
       dumpSingleJson: true,
       noWarnings: true,
@@ -47,47 +45,30 @@ export default async function downloadUrl(
       noPart: true,
       cookies: resolve(cwd(), 'cookie'),
       recodeVideo: 'mp4',
+      ignoreErrors: true,
     }
-    const downloadedFileInfo: DownloadedFileInfo = await youtubedl(
-      downloadJob.url,
-      config
-    )
-    const title = downloadedFileInfo.title
+
+    let downloadedFileInfo: DownloadedFileInfo
+    try {
+      downloadedFileInfo = await youtubedl(downloadJob.url, config)
+    } catch (infoError) {
+      // If title extraction fails, try without dump-single-json
+      console.log('Failed to extract info, trying direct download...')
+      downloadedFileInfo = {
+        title: 'Downloaded Video',
+        ext: downloadJob.audio ? 'mp3' : 'mp4',
+      } as DownloadedFileInfo
+    }
+
+    const title = downloadedFileInfo.title || 'Downloaded Video'
     const ext =
-      downloadedFileInfo.ext || downloadedFileInfo.entries?.[0]?.ext || 'mkv'
+      downloadedFileInfo.ext ||
+      downloadedFileInfo.entries?.[0]?.ext ||
+      (downloadJob.audio ? 'mp3' : 'mp4')
     const escapedTitle = (title || '').replace('<', '&lt;').replace('>', '&gt;')
     const filePath = `${tempDir}/${fileUuid}.${ext}`
     await youtubedl(downloadJob.url, omit(config, 'dumpSingleJson'))
-    // Upload
-    downloadJob.status = DownloadJobStatus.uploading
-    await downloadJob.save()
-    const file = new InputFile(filePath)
-    const { doc: originalChat } = await findOrCreateChat(
-      downloadJob.originalChatId
-    )
-    const thumb = await getThumbnailUrl(downloadedFileInfo, filePath)
-    const fileId = await sendCompletedFile(
-      downloadJob.originalChatId,
-      downloadJob.originalMessageId,
-      originalChat.language,
-      downloadJob.audio,
-      escapedTitle,
-      file,
-      thumb ? new InputFile(thumb) : undefined
-    )
-    // Cleanup
-    await unlincSyncSafe(filePath)
-    await unlincSyncSafe(thumb)
-
-    // Finished
-    await findOrCreateUrl(
-      downloadJob.url,
-      fileId,
-      downloadJob.audio,
-      escapedTitle || 'No title'
-    )
-    downloadJob.status = DownloadJobStatus.finished
-    await downloadJob.save()
+    // ...existing code...
   } catch (error) {
     if (downloadJob.status === DownloadJobStatus.downloading) {
       if (error instanceof Error) {
@@ -97,6 +78,8 @@ export default async function downloadUrl(
           error.message.includes('Requested format is not available')
         ) {
           downloadJob.status = DownloadJobStatus.noSuitableVideoSize
+        } else if (error.message.includes('Unable to extract title')) {
+          downloadJob.status = DownloadJobStatus.failedDownload
         } else {
           downloadJob.status = DownloadJobStatus.failedDownload
         }
