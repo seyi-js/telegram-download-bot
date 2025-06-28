@@ -68,7 +68,10 @@ export default async function downloadUrl(
     const filePath = `${tempDir}/${fileUuid}.${ext}`
 
     // Download the actual file directly
-    await youtubedl(downloadJob.url, config)
+    await youtubedl(downloadJob.url, {
+      output: config.output,
+      noWarnings: true,
+    })
 
     // Upload
     downloadJob.status = DownloadJobStatus.uploading
