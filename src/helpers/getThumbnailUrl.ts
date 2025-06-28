@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import * as sharp from 'sharp'
 import * as uuid from 'uuid'
 import { cwd } from 'process'
