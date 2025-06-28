@@ -1,7 +1,10 @@
 /* eslint-disable prettier/prettier */
 import * as sharp from 'sharp'
 import * as uuid from 'uuid'
+import { createWriteStream } from 'fs'
 import { cwd } from 'process'
+import { get } from 'https'
+import { get as httpGet } from 'http'
 import { resolve } from 'path'
 import DownloadedFileInfo from '@/models/DownloadedFileInfo'
 import env from '@/helpers/env'
@@ -39,15 +42,23 @@ export default async function getThumbnailUrl(
   return thumbPathDone
 }
 
-async function downloadThumbnail(url: string, id: string) {
-  const { default: TurboDownloader } = await import('turbo-downloader')
+function downloadThumbnail(url: string, id: string): Promise<string> {
   const destFile = resolve(tempDir, `${id}`)
-  const downloader = new TurboDownloader({
-    url,
-    destFile,
+
+  return new Promise((resolve, reject) => {
+    const file = createWriteStream(destFile)
+    const request = url.startsWith('https') ? get : httpGet
+
+    request(url, (response) => {
+      response.pipe(file)
+      file.on('finish', () => {
+        file.close()
+        resolve(destFile)
+      })
+    }).on('error', (error) => {
+      reject(error)
+    })
   })
-  await downloader.download()
-  return destFile
 }
 
 function makeThumbnail(videoPath: string, filename: string) {
