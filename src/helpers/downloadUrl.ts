@@ -33,7 +33,7 @@ export default async function downloadUrl(
     console.log(`Downloading url ${downloadJob.url}`)
     // Download
     const config = {
-      dumpSingleJson: true,
+      // dumpSingleJson: true,
       noWarnings: true,
       noCheckCertificate: true,
       youtubeSkipDashManifest: true,
@@ -64,7 +64,7 @@ export default async function downloadUrl(
       downloadJob.url,
       {
         // listFormats: true,
-        dumpSingleJson: true,
+        // dumpSingleJson: true,
         noWarnings: true,
         noCheckCertificate: true,
         cookies: resolve(cwd(), 'cookie'),
@@ -80,7 +80,7 @@ export default async function downloadUrl(
       downloadedFileInfo.ext || downloadedFileInfo.entries?.[0]?.ext || 'mkv'
     const escapedTitle = (title || '').replace('<', '&lt;').replace('>', '&gt;')
     const filePath = `${tempDir}/${fileUuid}.${ext}`
-    await youtubedl(downloadJob.url, omit(config, 'dumpSingleJson'))
+    await youtubedl(downloadJob.url, config)
     // Upload
     downloadJob.status = DownloadJobStatus.uploading
     await downloadJob.save()
