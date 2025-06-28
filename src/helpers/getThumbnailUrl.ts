@@ -3,7 +3,6 @@ import * as uuid from 'uuid'
 import { cwd } from 'process'
 import { resolve } from 'path'
 import DownloadedFileInfo from '@/models/DownloadedFileInfo'
-import TurboDownloader from 'turbo-downloader'
 import env from '@/helpers/env'
 import unlincSyncSafe from '@/helpers/unlincSyncSafe'
 import ffmpeg = require('fluent-ffmpeg')
@@ -40,6 +39,7 @@ export default async function getThumbnailUrl(
 }
 
 async function downloadThumbnail(url: string, id: string) {
+  const { default: TurboDownloader } = await import('turbo-downloader')
   const destFile = resolve(tempDir, `${id}`)
   const downloader = new TurboDownloader({
     url,
@@ -60,7 +60,7 @@ function makeThumbnail(videoPath: string, filename: string) {
       .on('error', (error) => {
         rej(error)
       })
-      .on('end', res)
+      .on('end', () => res())
   })
 }
 
