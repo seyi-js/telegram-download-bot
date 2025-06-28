@@ -53,38 +53,21 @@ export default async function downloadUrl(
       ignoreErrors: true,
     }
 
-    let downloadedFileInfo: DownloadedFileInfo
-    let title = 'Downloaded Video'
-    let ext = downloadJob.audio ? 'mp3' : 'mp4'
+    // Skip title extraction completely - use defaults
+    const title = 'Downloaded Video'
+    const ext = downloadJob.audio ? 'mp3' : 'mp4'
+    const downloadedFileInfo: DownloadedFileInfo = {
+      title,
+      ext,
+      thumbnails: [],
+    } as DownloadedFileInfo
 
-    // Try to get video info first
-    try {
-      downloadedFileInfo = await youtubedl(downloadJob.url, {
-        dumpSingleJson: true,
-        noWarnings: true,
-        noCheckCertificate: true,
-        cookies: resolve(cwd(), 'cookie'),
-        ignoreErrors: true,
-      })
-
-      title = downloadedFileInfo.title || 'Downloaded Video'
-      ext =
-        downloadedFileInfo.ext || downloadedFileInfo.entries?.[0]?.ext || ext
-      console.log(`Downloaded file info: ${JSON.stringify(downloadedFileInfo)}`)
-    } catch (infoError) {
-      console.log('Failed to extract video info, using defaults:', infoError)
-      // Create a minimal downloadedFileInfo object
-      downloadedFileInfo = {
-        title,
-        ext,
-        thumbnails: [],
-      } as DownloadedFileInfo
-    }
+    console.log('Skipping title extraction, proceeding with download...')
 
     const escapedTitle = (title || '').replace('<', '&lt;').replace('>', '&gt;')
     const filePath = `${tempDir}/${fileUuid}.${ext}`
 
-    // Download the actual file
+    // Download the actual file directly
     await youtubedl(downloadJob.url, config)
 
     // Upload
