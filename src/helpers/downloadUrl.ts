@@ -67,7 +67,8 @@ export default async function downloadUrl(
         dumpSingleJson: true,
         noWarnings: true,
         noCheckCertificate: true,
-        cookies: resolve(cwd(), 'cookie'),
+        // cookies: resolve(cwd(), 'cookie'),
+        cookiesFromBrowser: 'chrome',
       }
       // config
     )
