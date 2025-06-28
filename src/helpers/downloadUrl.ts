@@ -31,16 +31,24 @@ export default async function downloadUrl(
     : '/var/tmp/video-download-bot'
   try {
     console.log(`Downloading url ${downloadJob.url}`)
-    // Download
+
+    // Skip title extraction entirely - use defaults
+    const title = 'Downloaded Video'
+    const ext = downloadJob.audio ? 'mp3' : 'mp4'
+    const downloadedFileInfo: DownloadedFileInfo = {
+      title,
+      ext,
+      thumbnails: [],
+    } as DownloadedFileInfo
+
+    console.log('Proceeding with direct download...')
+
     const config = {
-      // dumpSingleJson: true,
       noWarnings: true,
       noCheckCertificate: true,
       youtubeSkipDashManifest: true,
       noPlaylist: true,
-      format: downloadJob.audio
-        ? 'bestaudio/best[acodec!=none]/best'
-        : 'best[height<=720]/best[height<=1080]/hls-742/720p/480p/best',
+      format: downloadJob.audio ? 'bestaudio/best' : 'best[height<=720]/best',
       maxFilesize: '2048m',
       noCallHome: true,
       noProgress: true,
@@ -49,38 +57,15 @@ export default async function downloadUrl(
       noCacheDir: true,
       noPart: true,
       cookies: resolve(cwd(), 'cookie'),
-      // cookiesFromBrowser: 'chrome',
       recodeVideo: 'mp4',
-      userAgent:
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      // addHeader: [
-      //   'Accept-Language:en-US,en;q=0.9',
-      //   'Accept:text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      //   'Referer:https://www.pornhub.com/',
-      // ],
     }
 
-    const downloadedFileInfo: DownloadedFileInfo = await youtubedl(
-      downloadJob.url,
-      {
-        // listFormats: true,
-        // dumpSingleJson: true,
-        noWarnings: true,
-        noCheckCertificate: true,
-        cookies: resolve(cwd(), 'cookie'),
-        // cookiesFromBrowser: 'chrome',
-      }
-      // config
-    )
-
-    console.log(`Downloaded file info: ${JSON.stringify(downloadedFileInfo)}`)
-
-    const title = downloadedFileInfo.title
-    const ext =
-      downloadedFileInfo.ext || downloadedFileInfo.entries?.[0]?.ext || 'mkv'
     const escapedTitle = (title || '').replace('<', '&lt;').replace('>', '&gt;')
     const filePath = `${tempDir}/${fileUuid}.${ext}`
+
+    // Download directly without info extraction
     await youtubedl(downloadJob.url, config)
+
     // Upload
     downloadJob.status = DownloadJobStatus.uploading
     await downloadJob.save()
