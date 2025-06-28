@@ -35,10 +35,10 @@ export default async function downloadUrl(
       noCheckCertificate: true,
       youtubeSkipDashManifest: true,
       noPlaylist: true,
-      // format: downloadJob.audio
-      //   ? 'bestaudio[filesize<=2G]/bestaudio[filesize_approx<=2G]/bestaudio/best[filesize<=2G]/best[filesize_approx<=2G]/best'
-      //   : 'best[filesize<=2G][ext=mp4]/best[filesize_approx<=2G][ext=mp4]/best[filesize<=2G]/best[filesize_approx<=2G]/best',
-      // maxFilesize: '2048m',
+      format: downloadJob.audio
+        ? 'bestaudio[filesize<=2G]/bestaudio[filesize_approx<=2G]/[filesize<=2G]/[filesize_approx<=2G]'
+        : '[filesize<=2G][ext=mp4]/[filesize_approx<=2G][ext=mp4]/[filesize<=2G]/[filesize_approx<=2G]',
+      maxFilesize: '2048m',
       noCallHome: true,
       noProgress: true,
       output: `${tempDir}/${fileUuid}.%(ext)s`,
