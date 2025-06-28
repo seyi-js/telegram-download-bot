@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { Chat, findOrCreateChat } from '@/models/Chat'
 import { DocumentType } from '@typegoose/typegoose'
 import { findDownloadRequestsForDownloadJob } from '@/models/downloadRequestFunctions'

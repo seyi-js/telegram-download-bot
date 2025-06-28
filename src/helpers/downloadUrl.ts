@@ -1,3 +1,6 @@
+/* eslint-disable sort-imports-es6-autofix/sort-imports-es6 */
+/* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable prettier/prettier */
 import * as rimraf from 'rimraf'
 import { DocumentType } from '@typegoose/typegoose'
 import { InputFile } from 'grammy'
@@ -36,8 +39,8 @@ export default async function downloadUrl(
       youtubeSkipDashManifest: true,
       noPlaylist: true,
       format: downloadJob.audio
-        ? 'bestaudio[filesize<=2G]/bestaudio[filesize_approx<=2G]/[filesize<=2G]/[filesize_approx<=2G]'
-        : '[filesize<=2G][ext=mp4]/[filesize_approx<=2G][ext=mp4]/[filesize<=2G]/[filesize_approx<=2G]',
+        ? 'bestaudio/best[acodec!=none]/best'
+        : 'best[height<=720]/best[height<=1080]/hls-742/720p/480p/best',
       maxFilesize: '2048m',
       noCallHome: true,
       noProgress: true,
@@ -48,10 +51,21 @@ export default async function downloadUrl(
       cookies: resolve(cwd(), 'cookie'),
       recodeVideo: 'mp4',
     }
+
     const downloadedFileInfo: DownloadedFileInfo = await youtubedl(
       downloadJob.url,
-      config
+      {
+        // listFormats: true,
+        dumpSingleJson: true,
+        noWarnings: true,
+        noCheckCertificate: true,
+        cookies: resolve(cwd(), 'cookie'),
+      }
+      // config
     )
+
+    console.log(`Downloaded file info: ${JSON.stringify(downloadedFileInfo)}`)
+
     const title = downloadedFileInfo.title
     const ext =
       downloadedFileInfo.ext || downloadedFileInfo.entries?.[0]?.ext || 'mkv'
@@ -73,6 +87,7 @@ export default async function downloadUrl(
       downloadJob.audio,
       escapedTitle,
       file,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       thumb ? new InputFile(thumb) : undefined
     )
     // Cleanup
@@ -89,6 +104,7 @@ export default async function downloadUrl(
     downloadJob.status = DownloadJobStatus.finished
     await downloadJob.save()
   } catch (error) {
+    console.log(error)
     if (downloadJob.status === DownloadJobStatus.downloading) {
       if (error instanceof Error) {
         if (error.message.includes('Unsupported URL')) {

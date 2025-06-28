@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import 'module-alias/register'
 import 'reflect-metadata'
 import 'source-map-support/register'
@@ -16,6 +17,7 @@ import i18n from '@/helpers/i18n'
 import languageMenu from '@/menus/language'
 import report from '@/helpers/report'
 import startMongo from '@/helpers/startMongo'
+// import '@/helpers/test' // For testing purposes, remove in production
 
 async function runApp() {
   console.log('Starting app...')
