@@ -48,8 +48,8 @@ export default async function downloadUrl(
       mergeOutputFormat: 'mkv',
       noCacheDir: true,
       noPart: true,
-      // cookies: resolve(cwd(), 'cookie'),
-      cookiesFromBrowser: 'chrome',
+      cookies: resolve(cwd(), 'cookie'),
+      // cookiesFromBrowser: 'chrome',
       recodeVideo: 'mp4',
       userAgent:
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -67,8 +67,8 @@ export default async function downloadUrl(
         dumpSingleJson: true,
         noWarnings: true,
         noCheckCertificate: true,
-        // cookies: resolve(cwd(), 'cookie'),
-        cookiesFromBrowser: 'chrome',
+        cookies: resolve(cwd(), 'cookie'),
+        // cookiesFromBrowser: 'chrome',
       }
       // config
     )
